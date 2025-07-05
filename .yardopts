@@ -1,0 +1,7 @@
+--markup markdown
+--title "Claude Code SDK for Ruby"
+--charset utf-8
+--readme README.md
+--plugin yard-sorbet
+-
+LICENSE.txt
