@@ -1,6 +1,20 @@
 # Claude Code SDK for Ruby
 
-Official Ruby SDK for interacting with Claude Code - Anthropic's AI coding assistant.
+[![Gem Version](https://badge.fury.io/rb/claude_code_sdk.svg)](https://badge.fury.io/rb/claude_code_sdk)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Ruby](https://img.shields.io/badge/ruby-%3E%3D%203.0.0-ruby.svg)](https://www.ruby-lang.org)
+
+A Ruby port of the official Python SDK for Claude Code, providing a clean, idiomatic Ruby interface for interacting with Anthropic's Claude Code AI assistant. This gem enables Ruby developers to harness the power of Claude's advanced AI capabilities for code generation, refactoring, debugging, and more.
+
+## Why Claude Code SDK for Ruby?
+
+- **Fully Featured**: Complete port of the official Python SDK with all the same functionality
+- **Ruby Idiomatic**: Designed with Ruby best practices in mind - blocks, enumerables, and familiar patterns
+- **Real-time Streaming**: Process Claude's responses as they arrive for a responsive experience
+- **Type-Safe Messages**: Strongly typed message objects for better code clarity and error prevention
+- **Flexible Configuration**: Global defaults with per-query overrides
+- **Comprehensive Tool Support**: Access to all Claude Code tools including file operations, search, and more
+- **Production Ready**: Robust error handling, comprehensive test coverage, and battle-tested implementation
 
 ## Installation
 
@@ -26,145 +40,229 @@ The SDK requires the Claude Code CLI to be installed:
 npm install -g @anthropic-ai/claude-code
 ```
 
-## Usage
+Make sure you have your Anthropic API key configured:
 
-### Simple Query
+```bash
+export ANTHROPIC_API_KEY="your-api-key"
+```
+
+## Quick Start
 
 ```ruby
 require 'claude_code_sdk'
 
-# Query with a block (streaming)
-ClaudeCodeSDK.query("What is 2 + 2?") do |message|
+# Simple question
+response = ClaudeCodeSDK.ask("What's the best way to implement a singleton in Ruby?")
+puts response
+
+# Code generation with streaming
+ClaudeCodeSDK.query("Create a Ruby class for managing a todo list") do |message|
   if message.is_a?(ClaudeCodeSDK::AssistantMessage)
     message.content.each do |block|
-      puts block.text if block.is_a?(ClaudeCodeSDK::Content::TextBlock)
+      print block.text if block.is_a?(ClaudeCodeSDK::Content::TextBlock)
     end
   end
 end
-
-# Or use the ask method for simple text responses
-response = ClaudeCodeSDK.ask("What is the capital of France?")
-puts response  # => "The capital of France is Paris."
 ```
 
-### With Options
+## Key Features
+
+### 1. Code Generation and Refactoring
 
 ```ruby
-# Using a hash
-ClaudeCodeSDK.query("Help me code",
-  system_prompt: "You are a Ruby expert",
-  allowed_tools: ["read_file", "write_file"],
-  max_thinking_tokens: 10000
+# Generate code with specific requirements
+ClaudeCodeSDK.query(
+  "Create a thread-safe cache implementation with TTL support",
+  system_prompt: "You are an expert Ruby developer focused on performance and thread safety"
 ) do |message|
-  # Handle messages
+  # Handle streaming responses
 end
 
-# Using Options object
-options = ClaudeCodeSDK::Options.new(
-  system_prompt: "You are a helpful assistant",
-  allowed_tools: ["read_file", "write_file", "list_files"],
-  cwd: "/path/to/project",
-  permission_mode: ClaudeCodeSDK::PermissionMode::ACCEPT_EDITS
-)
+# Refactor existing code
+code = File.read("legacy_code.rb")
+ClaudeCodeSDK.ask("Refactor this code to use modern Ruby patterns:\n\n#{code}")
+```
 
-ClaudeCodeSDK.query("List files in the project", options) do |message|
-  # Handle messages
+### 2. File Operations
+
+```ruby
+# Allow Claude to read and modify files
+ClaudeCodeSDK.query(
+  "Update all test files to use RSpec 3 syntax",
+  allowed_tools: ["read_file", "write_file", "list_files"],
+  cwd: Rails.root.to_s
+) do |message|
+  # Claude will analyze and update your test files
 end
 ```
+
+### 3. Code Analysis and Debugging
+
+```ruby
+# Analyze code for potential issues
+ClaudeCodeSDK.query(
+  "Analyze this Rails controller for security vulnerabilities and performance issues",
+  allowed_tools: ["read_file"],
+  tree: ["app/controllers"],
+  tree_verbose: true
+) do |message|
+  # Get detailed analysis with file context
+end
+```
+
+### 4. Interactive Development
+
+```ruby
+# Build features interactively
+options = ClaudeCodeSDK::Options.new(
+  allowed_tools: ["read_file", "write_file", "bash"],
+  permission_mode: ClaudeCodeSDK::PermissionMode::ACCEPT_EDITS,
+  max_thinking_tokens: 20000
+)
+
+ClaudeCodeSDK.query("Help me add user authentication to my Sinatra app", options) do |message|
+  case message
+  when ClaudeCodeSDK::AssistantMessage
+    # Claude's responses and actions
+  when ClaudeCodeSDK::SystemMessage
+    puts "[System] #{message.title}: #{message.message}"
+  when ClaudeCodeSDK::ResultMessage
+    puts "Task completed! Cost: $#{message.cost[:usd]}"
+  end
+end
+```
+
+## Advanced Usage
 
 ### Global Configuration
 
 ```ruby
 ClaudeCodeSDK.configure do |config|
-  config.default_system_prompt = "You are a Ruby programming expert"
-  config.default_cwd = "/home/user/projects"
+  config.default_system_prompt = "You are a Ruby on Rails expert"
+  config.default_cwd = Rails.root.to_s
   config.default_permission_mode = ClaudeCodeSDK::PermissionMode::DEFAULT
+  config.default_allowed_tools = ["read_file", "list_files"]
 end
 ```
 
-### Message Types
-
-The SDK yields different message types during the conversation:
+### Working with Message Types
 
 ```ruby
-ClaudeCodeSDK.query("Hello") do |message|
+ClaudeCodeSDK.query("Build a REST API endpoint") do |message|
   case message
   when ClaudeCodeSDK::UserMessage
-    puts "User: #{message.text}"
+    # Your input to Claude
     
   when ClaudeCodeSDK::AssistantMessage
     message.content.each do |block|
       case block
       when ClaudeCodeSDK::Content::TextBlock
-        puts "Claude: #{block.text}"
+        # Claude's text responses
+        puts block.text
+        
       when ClaudeCodeSDK::Content::ToolUseBlock
-        puts "Tool: #{block.name} with #{block.input}"
+        # Claude using a tool
+        puts "Using tool: #{block.name}"
+        
       when ClaudeCodeSDK::Content::ToolResultBlock
-        puts "Tool Result: #{block.output}"
+        # Results from tool execution
+        puts "Tool output: #{block.output}"
       end
     end
     
   when ClaudeCodeSDK::SystemMessage
-    puts "System: #{message.title} - #{message.message}"
+    # System notifications
     
   when ClaudeCodeSDK::ResultMessage
-    puts "Status: #{message.status}"
-    puts "Cost: $#{message.cost[:usd]}" if message.cost
+    # Final results with usage stats
+    puts "Tokens used: #{message.usage[:total_tokens]}"
   end
 end
 ```
 
-### Without Blocks
-
-If you don't provide a block, `query` returns an array of all messages:
+### Error Handling
 
 ```ruby
-messages = ClaudeCodeSDK.query("What is 2 + 2?")
-messages.each do |message|
-  puts message.inspect
+begin
+  ClaudeCodeSDK.query("Complex task") do |message|
+    # Handle messages
+  end
+rescue ClaudeCodeSDK::CLINotFoundError => e
+  # Claude Code CLI not installed
+rescue ClaudeCodeSDK::ProcessError => e
+  # Process execution failed
+  puts "Exit code: #{e.exit_code}"
+  puts "Error: #{e.stderr}"
+rescue ClaudeCodeSDK::TimeoutError => e
+  # Operation timed out
+rescue ClaudeCodeSDK::CLIJSONDecodeError => e
+  # Invalid response from CLI
 end
 ```
 
 ## Options Reference
 
-- `allowed_tools`: Array of tool names Claude can use
-- `blocked_tools`: Array of tool names Claude cannot use
-- `permission_mode`: How Claude handles file edits (`"default"`, `"acceptEdits"`, `"bypassPermissions"`)
-- `max_thinking_tokens`: Maximum tokens for Claude's thinking process (default: 8000)
-- `system_prompt`: System prompt to guide Claude's behavior
-- `cwd`: Working directory for file operations
-- `mcp_servers`: MCP server configurations
-- `disable_cache`: Disable caching
-- `no_markdown`: Disable markdown formatting
-- `tree`: Array of paths to include in the file tree
-- `tree_symlinks`: Include symlinks in file tree
-- `tree_verbose`: Verbose file tree output
+| Option | Type | Description |
+|--------|------|-------------|
+| `allowed_tools` | Array | Tools Claude can use (e.g., `["read_file", "write_file"]`) |
+| `blocked_tools` | Array | Tools Claude cannot use |
+| `permission_mode` | String | File edit handling: `"default"`, `"acceptEdits"`, `"bypassPermissions"` |
+| `max_thinking_tokens` | Integer | Max tokens for Claude's reasoning (default: 8000) |
+| `system_prompt` | String | System instructions for Claude |
+| `cwd` | String | Working directory for file operations |
+| `mcp_servers` | Array | MCP server configurations |
+| `disable_cache` | Boolean | Disable response caching |
+| `no_markdown` | Boolean | Disable markdown formatting |
+| `tree` | Array | Paths to include in file tree context |
+| `tree_symlinks` | Boolean | Include symlinks in file tree |
+| `tree_verbose` | Boolean | Verbose file tree output |
 
-## Error Handling
+## Real-World Examples
+
+### Rails Development Assistant
 
 ```ruby
-begin
-  ClaudeCodeSDK.query("Hello") do |message|
-    # Handle messages
-  end
-rescue ClaudeCodeSDK::CLINotFoundError => e
-  puts "Claude Code CLI not found: #{e.message}"
-rescue ClaudeCodeSDK::ProcessError => e
-  puts "Process failed: #{e.message}"
-  puts "Exit code: #{e.exit_code}"
-  puts "Error output: #{e.stderr}"
-rescue ClaudeCodeSDK::CLIJSONDecodeError => e
-  puts "JSON parsing failed: #{e.message}"
+# Help with Rails development tasks
+ClaudeCodeSDK.query(
+  "Add a full-text search feature to the Product model using PostgreSQL",
+  allowed_tools: ["read_file", "write_file", "bash"],
+  cwd: Rails.root.to_s,
+  system_prompt: "You are a Rails expert. Follow Rails conventions and best practices."
+) do |message|
+  # Claude will analyze your models, create migrations, and implement search
+end
+```
+
+### Test Generation
+
+```ruby
+# Generate comprehensive tests
+ClaudeCodeSDK.query(
+  "Generate RSpec tests for the UserService class with full coverage",
+  allowed_tools: ["read_file", "write_file"],
+  tree: ["app/services", "spec"]
+) do |message|
+  # Claude analyzes your code and creates thorough test suites
+end
+```
+
+### Code Review Assistant
+
+```ruby
+# Automated code review
+changed_files = `git diff --name-only main`.split("\n")
+ClaudeCodeSDK.query(
+  "Review these changed files for code quality, potential bugs, and improvements",
+  allowed_tools: ["read_file"],
+  tree: changed_files
+) do |message|
+  # Get detailed code review feedback
 end
 ```
 
 ## Development
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
-
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
-
-## Testing
+After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests.
 
 ```bash
 # Run all tests
@@ -178,12 +276,29 @@ bundle exec rake integration
 
 # Run linter
 bundle exec rubocop
+
+# Open console for experimentation
+bundle exec rake console
 ```
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/anthropics/claude-code-sdk-ruby.
+Bug reports and pull requests are welcome on GitHub at https://github.com/TanookiLabs/claude-code-sdk-ruby. This project is intended to be a safe, welcoming space for collaboration.
+
+1. Fork it
+2. Create your feature branch (`git checkout -b feature/my-new-feature`)
+3. Commit your changes (`git commit -am 'Add some feature'`)
+4. Push to the branch (`git push origin feature/my-new-feature`)
+5. Create a new Pull Request
+
+## About Tanooki Labs
+
+Claude Code SDK for Ruby is maintained by [Tanooki Labs LLC](https://tanookilabs.com), a software consultancy specializing in AI-powered developer tools and Ruby applications.
 
 ## License
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
+
+## Acknowledgments
+
+This gem is a Ruby port of the official Python SDK for Claude Code. We thank Anthropic for creating Claude and the Claude Code CLI that makes this integration possible.

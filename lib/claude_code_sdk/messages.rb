@@ -23,11 +23,12 @@ module ClaudeCodeSDK
 
   # Assistant response message
   class AssistantMessage < Message
-    attr_reader :content
+    attr_reader :content, :thinking
 
-    def initialize(id:, content:)
+    def initialize(id:, content:, thinking: nil)
       super(id: id, type: "assistant")
       @content = content # Array of content blocks
+      @thinking = thinking # Optional thinking content
     end
   end
 
@@ -51,6 +52,16 @@ module ClaudeCodeSDK
       @status = status
       @cost = cost
       @usage = usage
+    end
+  end
+
+  # Thinking message (Claude's internal reasoning)
+  class ThinkingMessage < Message
+    attr_reader :content
+
+    def initialize(id:, content:)
+      super(id: id, type: "thinking")
+      @content = content
     end
   end
 

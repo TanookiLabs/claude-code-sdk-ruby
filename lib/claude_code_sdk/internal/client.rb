@@ -37,14 +37,26 @@ module ClaudeCodeSDK
           # Handle the actual CLI format
           if raw[:message]
             msg = raw[:message]
+            # Extract thinking from content blocks
+            thinking_content = extract_thinking_from_content(msg[:content] || [])
+            # Parse remaining content blocks
+            content_blocks = parse_content_blocks(msg[:content] || [])
+            
             AssistantMessage.new(
               id: msg[:id],
-              content: parse_content_blocks(msg[:content] || [])
+              content: content_blocks,
+              thinking: thinking_content
             )
           else
+            # Extract thinking from content blocks
+            thinking_content = extract_thinking_from_content(raw[:content] || [])
+            # Parse remaining content blocks
+            content_blocks = parse_content_blocks(raw[:content] || [])
+            
             AssistantMessage.new(
               id: raw[:id] || "assistant-#{Time.now.to_f}",
-              content: parse_content_blocks(raw[:content] || [])
+              content: content_blocks,
+              thinking: thinking_content
             )
           end
         when "system"
@@ -61,12 +73,27 @@ module ClaudeCodeSDK
             cost: raw[:total_cost_usd] ? { usd: raw[:total_cost_usd] } : raw[:cost],
             usage: raw[:usage]
           )
+        when "thinking"
+          # Handle thinking messages from the CLI
+          content = raw[:content] || raw[:text] || raw[:message] || ""
+          ::ClaudeCodeSDK::ThinkingMessage.new(
+            id: raw[:id] || "thinking-#{Time.now.to_f}",
+            content: content
+          )
         else
           # Unknown message type, skip
           nil
         end
       end
 
+      def extract_thinking_from_content(content)
+        thinking_blocks = content.select { |block| block[:type] == "thinking" }
+        return nil if thinking_blocks.empty?
+        
+        # Combine all thinking blocks
+        thinking_blocks.map { |block| block[:thinking] }.join("\n")
+      end
+      
       def parse_content_blocks(content)
         content.map do |block|
           case block[:type]
@@ -84,6 +111,9 @@ module ClaudeCodeSDK
               output: block[:output],
               is_error: block[:is_error] || false
             )
+          when "thinking"
+            # Skip thinking blocks as they're handled separately
+            nil
           end
         end.compact
       end

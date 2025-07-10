@@ -5,12 +5,12 @@ require_relative "lib/claude_code_sdk/version"
 Gem::Specification.new do |spec|
   spec.name = "claude_code_sdk"
   spec.version = ClaudeCodeSDK::VERSION
-  spec.authors = ["Anthropic"]
-  spec.email = ["sdk@anthropic.com"]
+  spec.authors = ["Tanooki Labs LLC"]
+  spec.email = ["hello@tanookilabs.com"]
 
-  spec.summary = "Ruby SDK for Claude Code"
-  spec.description = "Official Ruby SDK for interacting with Claude Code - Anthropic's AI coding assistant"
-  spec.homepage = "https://github.com/anthropics/claude-code-sdk-ruby"
+  spec.summary = "Ruby SDK for Claude Code - AI-powered coding assistant"
+  spec.description = "A Ruby port of the official Python SDK for Claude Code. This gem provides a clean, idiomatic Ruby interface for interacting with Anthropic's Claude Code AI assistant through the command-line interface."
+  spec.homepage = "https://github.com/TanookiLabs/claude-code-sdk-ruby"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.0.0"
 
@@ -18,6 +18,7 @@ Gem::Specification.new do |spec|
   spec.metadata["source_code_uri"] = spec.homepage
   spec.metadata["changelog_uri"] = "#{spec.homepage}/blob/main/CHANGELOG.md"
   spec.metadata["documentation_uri"] = "https://www.rubydoc.info/gems/claude_code_sdk"
+  spec.metadata["bug_tracker_uri"] = "#{spec.homepage}/issues"
   spec.metadata["rubygems_mfa_required"] = "true"
 
   # Files to include in the gem
