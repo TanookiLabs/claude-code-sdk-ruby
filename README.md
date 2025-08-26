@@ -293,7 +293,7 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/Tanook
 
 ## About Tanooki Labs
 
-Claude Code SDK for Ruby is maintained by [Tanooki Labs LLC](https://tanookilabs.com), a software consultancy specializing in AI-powered developer tools and Ruby applications.
+Claude Code SDK for Ruby is maintained by [Tanooki Labs](https://tanookilabs.com), a software consultancy specializing in AI-powered developer tools and Ruby applications.
 
 ## License
 
